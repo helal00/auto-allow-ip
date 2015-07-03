@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+#Copyright (C) 2015  Helal Uddin <helal00 at gmail.com>
+#This program is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#This program is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with this program.  If not, see <http://www.gnu.org/licenses/>.
+_srcsbinpath=$(dirname $(readlink -f $0))
+
+if [ ! -f $_srcsbinpath/pam_session.sh ] ; then
+	echo "pam_session.sh file not found found, exiting..." 1>&2
+	exit 1;
+fi
+
+sudo apt-get -y install ufw
+if sudo ufw status | grep -q inactive ; then
+	sudo ufw limit ssh
+	ufw enable
+	echo "Only the ssh port (see /etc/services for port definations) is open. You should open other ports using 'sudo ufw' command for the applications you are using. e.g. sudo ufw http https" 1>&2
+fi
+ufw status
+
+_roothome=$(eval echo ~root)
+if [ ! -d "$_roothome/.ipmanage" ] ; then
+	sudo mkdir -p "$_roothome/.ipmanage" || ( echo "can't create directory $_roothome/.ipmanage ...exiting" 1>&2 && exit 1 )
+	echo "root" | sudo tee "$_roothome/.ipmanage/allowed"
+fi
+
+sudo mv $_srcsbinpath/pam_session.sh /etc/pam_session.sh || ( echo "can't move file $_srcsbinpath/pam_session.sh to /etc/pam_session.sh  ...exiting" 1>&2 && exit 1 )
+sudo chmod +x /etc/pam_session.sh
+sudo sed -i -e '$a\' /etc/pam.d/sshd
+echo "session     optional    pam_exec.so quiet /etc/pam_session.sh" | sudo tee -a /etc/pam.d/sshd || ( echo "Installation failed ...exiting" 1>&2 && exit 1 )
+echo "Now logout and log in via ssh and then check the 'sudo ufw status' command your ip is there or not." 1>&2
