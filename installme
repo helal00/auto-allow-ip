@@ -19,7 +19,31 @@ if [ ! -f $_srcsbinpath/pam_session.sh ] ; then
 	exit 1;
 fi
 
-sudo apt-get -y install ufw
+function getosname(){
+	if [ -f /etc/os-release ] ; then
+		eval $(cat /etc/os-release | grep "ID")
+		echo $ID
+	fi
+}
+
+_osname=$(getosname)
+echo "osname: $_osname"
+_ufw=$(command -v ufw)
+if [ -z "$_ufw" ] ; then
+	if [ ! -z "$_osname" ] ; then
+		if [ "$_osname" != "debian" ] && [ "$_osname" != "ubuntu" ] ; then
+			echo "	WARNING: Operating system not officially supported, ufw firewall need to be installed by yourself. Fully supported version is Debian 7 (wheezy) or Ubuntu 14.04 (truesty) or up. Please install ufw firewall for your distro to use this utility. e.g. sudo apt-get -y install ufw" 1>&2
+			exit 1
+		else
+			sudo apt-get -y install ufw
+			if [ $? -ne 0 ] ; then
+				echo "ufw firewall can't be installed properly, there is some error. Please install it yourselft to continue." 1>&2
+				exit 1
+			fi
+		fi
+	fi
+fi
+
 if sudo ufw status | grep -q inactive ; then
 	sudo ufw limit ssh
 	ufw enable
