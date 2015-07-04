@@ -41,6 +41,9 @@ if [ -z "$_ufw" ] ; then
 				exit 1
 			fi
 		fi
+	else
+		echo "	WARNING: Operating system not supported, ufw firewall need to be installed by yourself. Fully supported version is Debian 7 (wheezy) or Ubuntu 14.04 (truesty) or up. Please install ufw firewall for your distro to use this utility. e.g. sudo apt-get -y install ufw" 1>&2
+		exit 1
 	fi
 fi
 
